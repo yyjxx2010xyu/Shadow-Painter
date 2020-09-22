@@ -14,6 +14,9 @@
 #include <vector>
 #include "gui_setting.h"
 
+/*
+From Tutorial: https://www.learnopencv.com/warp-one-triangle-to-another-using-opencv-c-python/
+*/
 static void warpTriangle(cv::Mat& img1, cv::Mat& img2, std::vector<cv::Point2f> tri1, std::vector<cv::Point2f> tri2)
 {
 	cv::Rect r1 = boundingRect(tri1);
@@ -46,6 +49,8 @@ static void warpTriangle(cv::Mat& img1, cv::Mat& img2, std::vector<cv::Point2f> 
 	img2(r2) = img2(r2) + img2Cropped;
 }
 
+
+//	Convert QImage To cv::Mat
 cv::Mat QImage2cvMat(QImage image)
 {
 	cv::Mat mat;
@@ -71,7 +76,7 @@ cv::Mat QImage2cvMat(QImage image)
 	return mat;
 }
 
-
+//	Convert cv::Mat To QImage
 QImage cvMat2QImage(const cv::Mat& mat)
 {
 	// 8-bits unsigned, NO. OF CHANNELS = 1
@@ -123,11 +128,9 @@ QImage cvMat2QImage(const cv::Mat& mat)
 }
 
 
-static const int    SIZE_INCREMENT = 128;
 
 ScribbleArea::ScribbleArea(QWidget* parent) : QWidget(parent)
 {
-
 	setAttribute(Qt::WA_AcceptTouchEvents);
 	setAttribute(Qt::WA_StaticContents);
 	setAttribute(Qt::WA_TabletTracking);
@@ -139,9 +142,9 @@ ScribbleArea::ScribbleArea(QWidget* parent) : QWidget(parent)
 		<< Qt::PanGesture
 		<< Qt::PinchGesture
 		<< Qt::SwipeGesture;
-
 	foreach(Qt::GestureType gesture, gestures)
 		grabGesture(gesture);
+
 	gestureLabel = new QLabel;
 
 	_scale = 1.0;
@@ -175,19 +178,20 @@ ScribbleArea::ScribbleArea(QWidget* parent) : QWidget(parent)
 	initColorList();
 }
 
+
+//	ColorList To Init Panel Border
 void ScribbleArea::initColorList()
 {
 	colorList.clear();
 	colorList.push_back(QColor(0, 0, 255));
 	colorList.push_back(QColor(0, 255, 0));
-
 	colorList.push_back(QColor(0, 255, 255));
 	colorList.push_back(QColor(255, 0, 255));
 	colorList.push_back(QColor(255, 255, 0));
 }
 
 
-
+//	Open a New Image
 bool ScribbleArea::openImage(const QString& fileName)
 {
 
@@ -196,8 +200,6 @@ bool ScribbleArea::openImage(const QString& fileName)
 	QString bouderName = "C:/Users/yyjxx/Desktop/contour/contours1.png";
 	if (!bouderName.isEmpty())
 		openBorderImage(bouderName);
-	//qDebug() << bouderName;
-	//openBorderImage("")
 
 	QImage loadedImage;
 	if (!loadedImage.load(fileName))
@@ -215,17 +217,14 @@ bool ScribbleArea::openImage(const QString& fileName)
 	_border.setAlphaChannel(mask);
 
 
-
 	QPainter backPainter(&_background);
 	QRect curRect = _background.rect();
 	backPainter.drawImage(QRect(0, 0, _background.width(), _background.height()), _border, curRect);
 	backPainter.end();
 
 	setFixedSize(_background.size());
-	//blurImage();
 
 	_canvas = QImage(_background.width(), _background.height(), QImage::Format_ARGB32);
-	//_canvas = _canvas.scaled(width(), height(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 	_front = QImage(_background.width(), _background.height(), QImage::Format_ARGB32);
 	_polyContour = QImage(_background.width(), _background.height(), QImage::Format_ARGB32);
 
@@ -239,32 +238,27 @@ bool ScribbleArea::openImage(const QString& fileName)
 	return true;
 }
 
+//	Open Border Image
 bool ScribbleArea::openBorderImage(const QString& fileName)
 {
 	QImage loadedImage;
 	if (!loadedImage.load(fileName))
 		return false;
 	_border = loadedImage.convertToFormat(QImage::Format_ARGB32);
-	//_border = _border.scaled(_background.width(), _background.height(), Qt::KeepAspectRatio, Qt::FastTransformation);
 	return true;
 }
+
 
 bool ScribbleArea::saveImage(const QString& fileName, const char* fileFormat)
 {
 	bool success;
-
 	QImage visibleImage = _background;
 	resizeImage(&visibleImage, size());
 
 	if (visibleImage.save(fileName, fileFormat))
-	{
 		success = true;
-	}
 	else
-	{
 		success = false;
-	}
-
 	return success;
 }
 
@@ -363,8 +357,6 @@ void ScribbleArea::paintEvent(QPaintEvent* event)
 
 	drawPolyContour();
 	curRect.setSize(curRect.size() * 10);
-	//QImage scaledbackground = _background;
-	//scaledbackground = scaledbackground.scaled(_background.width() * _scale, _background.height() * _scale, Qt::KeepAspectRatio, Qt::FastTransformation);
 
 	QImage cuttedbackground = _background.copy(-_leftTop.x() / _scale, -_leftTop.y() / _scale, _background.width() / _scale, _background.height() / _scale);
 	cuttedbackground = cuttedbackground.scaled(cuttedbackground.width() * _scale, cuttedbackground.height() * _scale, Qt::KeepAspectRatio, Qt::FastTransformation);
@@ -374,42 +366,35 @@ void ScribbleArea::paintEvent(QPaintEvent* event)
 	cuttedPolyContour = cuttedPolyContour.scaled(cuttedPolyContour.width() * _scale, cuttedPolyContour.height() * _scale, Qt::KeepAspectRatio, Qt::FastTransformation);
 	painter.drawImage(rect.topLeft(), cuttedPolyContour, curRect);
 
-	//drawColorPalette();
-	//painter.drawImage(rect.topLeft(), _front, curRect);
+	drawColorPalette();
 
-	//painter.drawImage(rect.topLeft(), _border, curRect);
-	/*
- * QImage scalecanvas = _canvas;
-scalecanvas = scalecanvas.scaled(_canvas.width() * _scale, _canvas.height() * _scale, Qt::KeepAspectRatio, Qt::FastTransformation);
-QImage scalefront = _front;
-scalefront = scalefront.scaled(_front.width() * _scale, _front.height() * _scale, Qt::KeepAspectRatio, Qt::FastTransformation);*/
-
-
-//painter.drawImage(rect.topLeft(), _outPut, curRect);
-//painter.setCompositionMode(QPainter::CompositionMode_Source);
-//
-//if (!_penDown)
-//	countPoly(&_background);
-
-// painter.drawImage(rect.topLeft(), _poly, curRect);
-// painter.drawImage(_leftTop, scalecanvas, curRect);
- //
 }
 
 
 void ScribbleArea::resizeEvent(QResizeEvent* event)
 {
+	static const int    SIZE_INCREMENT = 128;
 	_background = _background.scaled(width(), height(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-	_canvas = _canvas.scaled(width(), height(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-	if (width() > _canvas.width() || height() > _canvas.height()) {
-		int newWidth = qMax(width() + SIZE_INCREMENT, _canvas.width());
-		int newHeight = qMax(height() + SIZE_INCREMENT, _canvas.height());
-		resizeImage(&_canvas, QSize(newWidth, newHeight));
+
+	if (width() > _background.width() || height() > _background.height())
+	{
+		int newWidth = qMax(width() + SIZE_INCREMENT, _background.width());
+		int newHeight = qMax(height() + SIZE_INCREMENT, _background.height());
+		resizeImage(&_background, QSize(newWidth, newHeight));
 		update();
 	}
 	QWidget::resizeEvent(event);
 }
 
+
+/*
+There are two touchpoints on the screen.
+Gestures:
+1. Move Gestures:
+degree [-20 .. 20]
+2. Pinch Gestures:
+degree [-130 ..180 .. 130]
+*/
 void ScribbleArea::touchedTwo(const QList<QTouchEvent::TouchPoint>& touchPoints)
 {
 	QPointF fromPoint1 = touchPoints.at(0).startPos();
@@ -426,19 +411,12 @@ void ScribbleArea::touchedTwo(const QList<QTouchEvent::TouchPoint>& touchPoints)
 
 	if ((degree <= 180 && degree >= 130) || (degree >= -180 && degree <= -130))
 	{
-		qreal scaleFactor = QLineF(fromPoint1, fromPoint2).length()  / QLineF(toPoint1, toPoint2).length();
+		qreal scaleFactor = QLineF(fromPoint1, fromPoint2).length() / QLineF(toPoint1, toPoint2).length();
 
 		_scale = _originScale * 1 / scaleFactor;
 		QPointF midPoint = (toPoint1 + toPoint2) / 2.0;
 		QPointF position = (midPoint - _originLeftTop) / _originScale;
 		_leftTop = _originLeftTop + position * (_originScale - _scale);
-
-		qDebug() << "scale: " << _scale;
-		qDebug() << "originscale: " << _originScale;
-		qDebug() << "leftTop: " << _leftTop;
-		qDebug() << "midPoint: " << midPoint;
-		qDebug() << "position: " << position;
-
 	}
 	else
 		if (degree <= 20 && degree >= -20)
@@ -449,6 +427,12 @@ void ScribbleArea::touchedTwo(const QList<QTouchEvent::TouchPoint>& touchPoints)
 	colorSelected = false;
 }
 
+/*
+There is one touchpoint on the screen.
+Gestures:
+1. Select Contours
+2. Select GrayPaletteRect
+*/
 void ScribbleArea::touchedOne(const QList<QTouchEvent::TouchPoint>& touchPoints)
 {
 	const QTouchEvent::TouchPoint& touchPoint = touchPoints.at(0);
@@ -469,22 +453,21 @@ void ScribbleArea::touchedOne(const QList<QTouchEvent::TouchPoint>& touchPoints)
 				miniDis = _PolyContours[i].DisContour(QPoint(curPoi.x(), curPoi.y()));
 				qDebug() << "_displayContourId :" << i;
 			}
-			//break;
 		}
 
 	QSizeF diams = touchPoint.ellipseDiameters();
 	QRectF rect(QPointF(), diams);
 	rect.moveCenter(touchPoint.pos());
 	bool containFlag = false;
-	for (int i = 0; i < grayRect.size(); i++)
+	for (int i = 0; i < grayPaletteRect.size(); i++)
 	{
-		QRectF curRect = grayRect.at(i);
+		QRectF curRect = grayPaletteRect.at(i);
 		if (curRect.contains(rect))
 		{
+			colorSel = i;
 			colorSelected = true;
 			containFlag = true;
 			_color = grayDegree.at(i);
-			colorSel = i;
 		}
 	}
 	if (!containFlag)
@@ -493,15 +476,12 @@ void ScribbleArea::touchedOne(const QList<QTouchEvent::TouchPoint>& touchPoints)
 		colorSelected = false;
 	}
 }
+
+/*
+detect TouchEvent & prevent mistakenly touching (touchTimer: detect the gap of touchpoints)
+*/
 bool ScribbleArea::event(QEvent* event)
 {
-	/*if (event->type() == QEvent::TabletEnterProximity ||
-		event->type() == QEvent::TabletLeaveProximity) {
-		updateCursor(static_cast<QTabletEvent *>(event));
-		return true;
-	}*/
-	//updateCursor(static_cast<QTabletEvent *>(event));
-
 	switch (event->type())
 	{
 	case QEvent::TouchBegin:
@@ -513,9 +493,7 @@ bool ScribbleArea::event(QEvent* event)
 		const QTouchEvent* touch = dynamic_cast<QTouchEvent*>(event);
 		const QList<QTouchEvent::TouchPoint> touchPoints = dynamic_cast<QTouchEvent*>(event)->touchPoints();
 		preTouchPoints = touchPoints;
-
 		_touchNum = touchPoints.count();
-
 		break;
 	}
 	case QEvent::TouchUpdate:
@@ -525,7 +503,7 @@ bool ScribbleArea::event(QEvent* event)
 		const QTouchEvent* touch = dynamic_cast<QTouchEvent*>(event);
 		const QList<QTouchEvent::TouchPoint> touchPoints = dynamic_cast<QTouchEvent*>(event)->touchPoints();
 		preTouchPoints = touchPoints;
-		if (touchTimer->isActive() && _touchNum!=touchPoints.count())
+		if (touchTimer->isActive() && _touchNum != touchPoints.count())
 		{
 			_touchNum = touchPoints.count();
 			touchTimer->start();
@@ -550,12 +528,8 @@ bool ScribbleArea::event(QEvent* event)
 
 	case QEvent::TouchEnd:
 	{
-		qDebug() << "TouchEnd";
-		qDebug() << "Remain Time:" << touchTimer->remainingTime();
-		qDebug() << touchupdated << " " << touchTimer->isActive();
 		if (!touchupdated)
 		{
-			qDebug() << "!!!!";
 			switch (preTouchPoints.count())
 			{
 			case 1:
@@ -596,7 +570,6 @@ void ScribbleArea::resizeImage(QImage* image, const QSize& newSize)
 static qreal penToWidth(qreal pressure, int xtilt, int ytilt)
 {
 	qreal tiltScale = (qAbs(ytilt * ytilt)) / 3600.0 + 0.5;
-	// qDebug() << pressure * tiltScale * 50 + 1;
 	return pressure * tiltScale * 50 + 1;
 }
 
@@ -605,6 +578,7 @@ void ScribbleArea::updateBrush(const QTabletEvent* event)
 	int xtiltValue = int(((event->xTilt() + 60.0) / 120.0) * 255);
 	int ytiltValue = int(((event->yTilt() + 60.0) / 120.0) * 255);
 
+	//	setting line style
 	_pen.setCapStyle(Qt::RoundCap);
 	_pen.setJoinStyle(Qt::RoundJoin);
 
@@ -614,14 +588,12 @@ void ScribbleArea::updateBrush(const QTabletEvent* event)
 	{
 		_eraseMode = true;
 
-
 		_pen.setColor(QColor(254, 254, 254, 0));
 		_brush.setColor(qRgba(254, 254, 254, 0));
 	}
 	else
 	{
 		updateCursor(event, penToWidth(event->pressure(), event->xTilt(), event->yTilt()));
-		//qDebug() << event->pos();
 		_eraseMode = false;
 		QPoint curPixel = ((event->posF() - _leftTop) / _scale).toPoint();
 		if (colorSelected)
@@ -640,12 +612,10 @@ void ScribbleArea::updateCanvas(QTabletEvent* event)
 	painter.setRenderHint(QPainter::Antialiasing);
 	if (_eraseMode)
 		painter.setCompositionMode(QPainter::CompositionMode_Clear);
-	else
-		if (!_eraseMode)
-			painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+	if (!_eraseMode)
+		painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
 	painter.setPen(_pen);
 	painter.drawLine((lastPoint.pos - _leftTop) / _scale, (event->posF() - _leftTop) / _scale);
-	//  fillTinyGap(&_canvas);
 }
 
 void ScribbleArea::updateCursor(const QTabletEvent* event, const qreal width)
@@ -668,10 +638,6 @@ void ScribbleArea::updateCursor(const QTabletEvent* event, const qreal width)
 	this->setCursor(cursor);
 }
 
-void ScribbleArea::fillTinyGap(QImage* image)
-{
-	QVector<QVector<int>> V;
-}
 
 void ScribbleArea::selectBoundary(QImage* image, QImage* front)
 {
@@ -721,49 +687,47 @@ void ScribbleArea::selectBoundary(QImage* image, QImage* front)
 	delete[]V;
 }
 
+/*
+
+*/
 void ScribbleArea::countGray(QImage* image)
 {
 	QMap<QRgb, long long> C;
 	C.clear();
-	qDebug() << "count" << C.size();
+
 	for (int i = 0; i < image->width(); i++)
 		for (int j = 0; j < image->height(); j++)
 			C[image->pixel(i, j)] += 1;
-	qDebug() << "count" << C.size();
+
 	long long total = image->width() * image->height();
 
 	grayDegree.clear();
 	for (QMap<QRgb, long long>::iterator iter = C.begin(); iter != C.end(); iter++)
 	{
+		//	skip background color
 		if (iter.key() == qRgb(254, 254, 254))
 			continue;
+		//	counting thresholds
 		if (iter.value() > (total / 200))
-		{
 			grayDegree.push_back(iter.key());
-		}
-		//qDebug() << " value : " << iter.value();
-	//qDebug() <<"red: " << qRed(iter.key()) << "green: " << qGreen(iter.key()) << " value: " << iter.value();
 	}
 	constructGrayRect();
-	/*
-	for (int i=0;i<image->width();i++)
-		for (int j=0;j<image->height();j++)
-			if (C[image->pixel(i,j)]>5000)
-				image->setPixelColor(i,j, qRgba(254, 254, 254, 0));*/
 }
 
+/*
+counting polygon in Image using OpenCV (cv::findContours)
+store polygon in _PolyContours
+*/
 void ScribbleArea::countPoly(QImage* image)
 {
 	_PolyContours.clear();
 
 	cv::Mat srcImage, grayImage, dstImage, ployImage;
 	srcImage = QImage2cvMat(*image);
-
-	//cv::imshow("srcImage", srcImage);
 	dstImage = cv::Mat(srcImage.size(), CV_8UC4);
 	ployImage = cv::Mat(srcImage.size(), CV_8UC4, cv::Scalar(255, 255, 255, 0));
-	//cv::Mat alphaImage = cv::Mat(srcImage.size(), srcImage.depth(), cv::Scalar(0));
-	//ployImage.
+
+
 	std::vector<cv::Scalar> CurColor;
 	CurColor.clear();
 	CurColor.push_back(cv::Scalar(rand() % 255, rand() % 255, rand() % 255, 255));
@@ -785,7 +749,6 @@ void ScribbleArea::countPoly(QImage* image)
 		grayImage = srcImage.clone();
 		cv::Scalar color = CurColor[i];
 		cv::cvtColor(srcImage, grayImage, cv::COLOR_BGRA2GRAY);
-		qDebug() << "color: " << qRed(grayDegree[i]);
 
 		grayImage = grayImage == qRed(grayDegree[i]);
 
@@ -793,13 +756,12 @@ void ScribbleArea::countPoly(QImage* image)
 
 
 
+		//	Poly Area Thresholds
 		for (int j = 0; j < hierarchy.size(); j++)
 		{
-			//cv::Scalar color = cv::Scalar(rand() % 255, rand() % 255, rand() % 255);
 			if (fabs(cv::contourArea(contours[j])) < 200)
 				continue;
 			fitcontours.push_back(contours[j]);
-			//drawContours(dstImage, contours, i, color, cv::FILLED, 8, hierarchy);
 		}
 
 		std::vector<cv::Point> contours_ploy;
@@ -814,46 +776,38 @@ void ScribbleArea::countPoly(QImage* image)
 		}
 		for (size_t j = 0; j < ployContours.size(); j++)
 		{
-
-			qDebug() << "size: " << ployContours[j].size();
 			//drawContours(ployImage, ployContours, i, color, 1, 8, std::vector<cv::Vec4i>(), 0, cv::Point());
 			_PolyContours.push_back(MovablePolyContour(ployContours[j], i));
 		}
 	}
 
-	//cv::imshow("原始图", srcImage);
-	//cv::imshow("轮廓图", dstImage);
-	//cv::imshow("最终图", ployImage);
 	_poly = cvMat2QImage(ployImage);
-	//cv::waitKey(0);
 }
 
+//	init grayRect position & size
 void ScribbleArea::constructGrayRect()
 {
 	int width = this->width();
 	int height = this->height();
-	grayRect.clear();
+	grayPaletteRect.clear();
 	int x = width / 8;
 	int y = height / 8;
 	int palettewidth = x;
 	int paletteheight = y;
 	for (int i = 0; i < grayDegree.size(); i++)
 	{
-		grayRect.push_back(QRect(x, y + i * (paletteheight + 10), palettewidth, paletteheight));
+		grayPaletteRect.push_back(QRect(x, y + i * (paletteheight + 10), palettewidth, paletteheight));
 	}
 }
+
 void ScribbleArea::blurImage()
 {
-
 	cv::Mat src, dst;
 	src = QImage2cvMat(_background);
 	medianBlur(src, dst, 5);
 	_background = cvMat2QImage(dst);
-	//imshow("origin", src);
-	//imshow("blured", dst);
-	//cv::waitKey(0);
-
 }
+
 bool ScribbleArea::checkInPolyContour()
 {
 	for (size_t i = 0; i < _PolyContours.size(); i++)
@@ -877,63 +831,25 @@ bool ScribbleArea::checkInPolyContour()
 
 void ScribbleArea::updatePoly()
 {
-	if (0)
-	{
-		QPainter painter(&_background);
-		QPointF scaledBeginSelPoint = (beginSelPoint - _leftTop) / _scale;
-		QPointF scaledEndSelPoint = (endSelPoint - _leftTop) / _scale;
-		QPolygon plyBegin, plyEnd;
-		plyBegin << _Brother1.toPoint() << _Brother2.toPoint() << scaledBeginSelPoint.toPoint();
-		plyEnd << _Brother1.toPoint() << _Brother2.toPoint() << scaledEndSelPoint.toPoint();
-
-		QBrush brush(Qt::SolidPattern);
-		QPen pen(_curGrayDegree);
-		brush.setColor(_curGrayDegree);
-		painter.setPen(pen);
-		painter.setBrush(brush);
-		painter.drawPolygon(plyEnd);
-
-		/*
-		brush.setColor(_background.pixelColor(scaledEndSelPoint.toPoint()));
-		painter.setBrush(brush);
-		painter.drawPolygon(plyEnd);
-		*/
-
-
-		return;
-	}
-
 	// Read input image and convert to float
-	// 读取图像，并将图像转换为float
-
 	cv::Mat imgIn = QImage2cvMat(_background);
-
-	//cv::Mat imgIn2 = cv::imread("C:\\Users\\yyjxx\\Desktop\\robot.png");
-
-	//qDebug() << imgIn.type() << " " << imgIn2.type();
 
 	imgIn.convertTo(imgIn, CV_8UC3);
 
 	cv::cvtColor(imgIn, imgIn, CV_BGRA2BGR);
-	qDebug() << imgIn.type() << " " << imgIn.depth();
-	//imshow("Input", imgIn);
-	//cv::waitKey(0);
 
 	imgIn.convertTo(imgIn, CV_32FC3, 1 / 255.0);
 
 	// Output image is set to white
 	cv::Mat imgOut = cv::Mat::ones(imgIn.size(), imgIn.type());
-	//设定输出，输出为纯白色图像
 	imgOut = cv::Scalar(1.0, 1.0, 1.0);
 
-	// Input triangle 输入三角形坐标点
 	std::vector<cv::Point2f> triIn;
 	triIn.push_back(cv::Point2f(_Brother1.x(), _Brother1.y()));
 	triIn.push_back(cv::Point2f(_Brother2.x(), _Brother2.y()));
 	QPointF scaledBeginSelPoint = (beginSelPoint - _leftTop) / _scale;
 	triIn.push_back(cv::Point2f(scaledBeginSelPoint.x(), scaledBeginSelPoint.y()));
 
-	// Output triangle 输出三角形坐标点
 	std::vector<cv::Point2f> triOut;
 	triOut.push_back(cv::Point2f(_Brother1.x(), _Brother1.y()));
 	triOut.push_back(cv::Point2f(_Brother2.x(), _Brother2.y()));
@@ -941,7 +857,7 @@ void ScribbleArea::updatePoly()
 	triOut.push_back(cv::Point2f(scaledEndSelPoint.x(), scaledEndSelPoint.y()));
 
 
-	// Warp all pixels inside input triangle to output triangle 仿射变换
+	// Warp all pixels inside input triangle to output triangle
 	warpTriangle(imgIn, imgOut, triIn, triOut);
 
 	// Draw triangle on the input and output image.
@@ -949,7 +865,6 @@ void ScribbleArea::updatePoly()
 	// Convert back to uint because OpenCV antialiasing
 	// does not work on image of type CV_32FC3
 
-	//保存为INT型
 	imgIn.convertTo(imgIn, CV_8UC3, 255.0);
 	imgOut.convertTo(imgOut, CV_8UC3, 255.0);
 	imgOut.convertTo(imgOut, CV_8UC4);
@@ -957,19 +872,12 @@ void ScribbleArea::updatePoly()
 	_outPut = cvMat2QImage(imgOut);
 	QImage mask = _outPut.createMaskFromColor(_outPut.pixel(0, 0), Qt::MaskOutColor);
 	_outPut.setAlphaChannel(mask);
-
-
-	//QPainter painter(&_background);
-	//painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
-	//painter.drawImage(QRect(), _outPut);
-	//imshow("Output", imgOut);
-	//cv::waitKey(0);
 }
 
 void ScribbleArea::drawColorPalette()
 {
 	QPainter painter(&_front);
-	for (int i = 0; i < grayRect.size(); i++)
+	for (int i = 0; i < grayPaletteRect.size(); i++)
 	{
 		if (colorSel == i)
 		{
@@ -985,7 +893,7 @@ void ScribbleArea::drawColorPalette()
 		Qt::BrushStyle brushStyle(Qt::SolidPattern);
 		QBrush brush(brushColor, brushStyle);
 		painter.setBrush(brush);
-		painter.drawRect(grayRect.at(i));
+		painter.drawRect(grayPaletteRect.at(i));
 	}
 
 }
@@ -1010,7 +918,6 @@ void ScribbleArea::drawPolyContour()
 			for (int j = 0; j < _PolyContours[i].Poly.size(); j++)
 				painter.drawPoint(_PolyContours[i].Poly[j]);
 
-			qDebug() << grayDegreeToColor(_PolyContours[i].GetGrayDegree());
 			pen.setWidth(POLYLINEWIDTH);
 			pen.setColor(grayDegreeToColor(_PolyContours[i].GetGrayDegree()));
 			painter.setPen(pen);

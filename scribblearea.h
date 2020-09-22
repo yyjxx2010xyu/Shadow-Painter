@@ -39,7 +39,6 @@ private:
 	void updateBrush(const QTabletEvent* event);
 	void updateCanvas(QTabletEvent* event);
 	void updateCursor(const QTabletEvent* event, const qreal width);
-	void fillTinyGap(QImage* image);
 	void selectBoundary(QImage* image, QImage* front);
 
 	void countGray(QImage* image);
@@ -64,7 +63,7 @@ private:
 
 	QVector <QColor> colorList;
 	QVector <QRgb> grayDegree;
-	QVector <QRect> grayRect;
+	QVector <QRect> grayPaletteRect;
 	/*
 		_background ±≥æ∞Õº≤„ º¥Õº∆¨
 		_canvas     ª≠≤ºÕº≤„ º¥“ı”∞
